@@ -1,15 +1,23 @@
 <template>
   <div class="manage-document-content">
     <div class="add">
-      <el-button type="primary" @click="showAddDialog">添加文档内容</el-button>
+      <el-button type="primary" @click="showAddDialog">
+        {{ addTitle }}
+      </el-button>
     </div>
     <el-table :data="themeData" border style="width: 100%">
-      <el-table-column prop="id" label="ID" min-width="50px"></el-table-column>
+      <template
+        v-for="item in tableColumns"
+      >
+        <el-table-column :prop="item.prop" :label="item.label" :key="item.prop"></el-table-column>
+      </template>
+      <!-- <el-table-column prop="id" label="ID" min-width="50px"></el-table-column>
       <el-table-column prop="theme_name" label="主题名称"></el-table-column>
       <el-table-column prop="page_name" label="所属文档页"></el-table-column>
       <el-table-column prop="name" label="文档标题"></el-table-column>
       <el-table-column prop="create_time" label="创建时间"></el-table-column>
       <el-table-column prop="update_time" label="更改时间"></el-table-column>
+      <el-table-column prop="edit" label="操作"> -->
       <el-table-column prop="edit" label="操作">
         <template v-slot="scope">
           <el-row class="edit">
@@ -30,8 +38,9 @@
       </el-table-column>
     </el-table>
     <!-- 编辑主题的对话框 -->
-    <el-dialog fullscreen :title="switchDialog ? '添加文档内容' : '编辑文档内容'" :visible.sync="editDialogVisible">
+    <el-dialog custom-class="common-dialog" :fullscreen="isFullscreen" :title="switchDialog ? addOrEdit[0] : addOrEdit[1]" :visible.sync="editDialogVisible">
       <el-form :model="form">
+        <!-- id -->
         <el-form-item v-if="!switchDialog" label="id" :label-width="formLabelWidth">
           <el-input
             v-model="form.id"
@@ -40,7 +49,22 @@
             :placeholder="form.id"
           ></el-input>
         </el-form-item>
-        <!-- <div class="select-theme">
+        <!-- 添加文章主题名称 -->
+        <el-form-item v-if="artTheme.isShow" :label="artTheme.title" :label-width="formLabelWidth">
+          <el-input
+            v-model="form.name"
+            autocomplete="off"
+          />
+        </el-form-item>
+        <!-- 添加文章主题描述 -->
+        <el-form-item v-if="artTheme.isShow" :label="artTheme.description" :label-width="formLabelWidth">
+          <el-input
+            type="textarea"
+            v-model="form.description"
+            autocomplete="off"
+          />
+        </el-form-item>
+        <div class="select-theme" v-if="isSelectTheme">
           <el-form-item label="主题名称" :label-width="formLabelWidth">
             <div class="options">
               <el-select v-model="selectThemeId" placeholder="请选择">
@@ -53,8 +77,8 @@
               </el-select>
             </div>
           </el-form-item>
-        </div> -->
-        <div class="select-dom">
+        </div>
+        <div class="select-dom" v-if="isSelectDom">
           <el-form-item label="文档页名称" :label-width="formLabelWidth">
             <div class="options">
               <el-select v-model="selectDomPageId" placeholder="请选择">
@@ -68,14 +92,14 @@
             </div>
           </el-form-item>
         </div>
-        <el-form-item label="文档标题" :label-width="formLabelWidth">
+        <el-form-item v-if="isDomTitle" label="文档标题" :label-width="formLabelWidth">
           <el-input
             v-model="form.name"
             autocomplete="off"
           />
         </el-form-item>
         <!-- 文档内容 -->
-        <div class="md">
+        <div class="md" v-if="isEditMd">
           <!-- <el-form-item label="文档内容" :label-width="formLabelWidth" /> -->
           <mavon-editor class="mavon-editor" :class="{'mh': switchDialog}" v-model="domContent" />
         </div>
@@ -95,6 +119,70 @@ import { mavonEditor } from 'mavon-editor'
 import 'mavon-editor/dist/css/index.css'
 
 export default {
+  props: {
+    getData: {
+      type: Function
+    },
+    addData: {
+      type: Function
+    },
+    putData: {
+      type: Function
+    },
+    deleteData: {
+      type: Function
+    },
+    addTitle: {
+      type: String,
+      required: true
+    },
+    tableColumns: {
+      type: Array,
+      required: true
+    },
+    addOrEdit: {
+      type: Array,
+      required: true
+    },
+    isFullscreen: {
+      type: Boolean,
+      default: false
+    },
+    form: {
+      type: Object
+    },
+    isSelectTheme: {
+      type: Boolean,
+      default: false
+    },
+    selectThemeId: {
+      
+    },
+    themeOptions: {
+      type: Array
+    },
+    isSelectDom: {
+      type: Boolean,
+      default: false
+    },
+    selectDomPageId: {
+
+    },
+    domOptions: {
+      type: Array
+    },
+    isEditMd: {
+      type: Boolean,
+      default: false
+    },
+    isDomTitle: {
+      type: Boolean,
+      default: false
+    },
+    artTheme: {
+      type: Object
+    }
+  },
   components: {
     mavonEditor
   },
@@ -103,21 +191,21 @@ export default {
       themeData: [],
       switchDialog: true,
       editDialogVisible: false,
-      form: {
-        id: '',
-        name: '',
-      },
+      // form: {
+      //   id: '',
+      //   name: '',
+      // },
       formLabelWidth: '120px',
       domContent: '',
-      themeOptions: '',
-      domOptions: '',
-      selectDomPageId: ''
+      // themeOptions: '',
+      // domOptions: '',
+      // selectDomPageId: ''
     }
   },
   methods: {
     // 弹出编辑对话框
     showEditDialog(data) {
-      // console.log(data);
+      console.log(data);
       this.getDomName()
       this.switchDialog = false
       this.domContent = data.content
@@ -144,7 +232,7 @@ export default {
         })
       } else { // 提交编辑主题
         api.modifyDomCon(this.form.id, this.selectDomPageId, this.form.name, this.domContent).then(res => {
-          // console.log(res);
+          console.log(res);
           if (res.errorCode === 0) {
             this.$router.go(0)
           } else {
@@ -174,10 +262,8 @@ export default {
     },
     // 弹出添加主题的对话框
     showAddDialog() {
-      this.getDomName()
       this.switchDialog = true
       this.clearForm()
-      this.domContent = ''
       this.editDialogVisible = true
     },
     // 清空表单
@@ -202,9 +288,8 @@ export default {
     }
   },
   created() {
-    api.getDomCon().then(res => {
-      // console.log(res);
-
+    this.getData().then(res => {
+      console.log(res);
       this.themeData = res.data
     })
   }
@@ -231,6 +316,10 @@ export default {
   }
   .mh {
     max-height: 680px;
+  }
+
+  .el-dialog__wrapper > .el-dialog {
+    min-width: 400px;
   }
 }
 

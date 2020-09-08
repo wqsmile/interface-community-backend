@@ -6,7 +6,9 @@
     <el-table :data="themeData" border style="width: 100%">
       <el-table-column prop="id" label="ID" min-width="50px"></el-table-column>
       <el-table-column prop="name" label="名称"></el-table-column>
+      <el-table-column prop="level" label="级别"></el-table-column>
       <el-table-column prop="create_time" label="创建时间"></el-table-column>
+      <el-table-column prop="update_time" label="更改时间"></el-table-column>
       <el-table-column prop="edit" label="操作">
         <template v-slot="scope">
           <el-row class="edit">
@@ -28,7 +30,7 @@
     </el-table>
     <!-- 编辑主题的对话框 -->
     <el-dialog :title="switchDialog ? '添加管理员' : '找回管理员密码'" :visible.sync="editDialogVisible">
-      <el-form :model="form">
+      <el-form :model="form" status-icon :rules="rules" ref="form" class="demo-ruleForm">
         <el-form-item v-if="!switchDialog" label="id" :label-width="formLabelWidth">
           <el-input
             v-model="form.id"
@@ -37,11 +39,35 @@
             :placeholder="form.id"
           ></el-input>
         </el-form-item>
-        <el-form-item label="管理员名称" :label-width="formLabelWidth">
+        <el-form-item label="管理员名称" :label-width="formLabelWidth" prop="name">
           <el-input
             v-model="form.name"
             autocomplete="off"
-          >{{ switchDialog ? '' : form.name }}</el-input>
+          />
+        </el-form-item>
+        <el-form-item label="管理员密码" :label-width="formLabelWidth" prop="password">
+          <el-input
+            type="password"
+            v-model="form.password"
+            autocomplete="off"
+          />
+        </el-form-item>
+        <el-form-item label="确认密码" :label-width="formLabelWidth" prop="rePassword">
+          <el-input
+            type="password"
+            v-model="form.rePassword"
+            autocomplete="off"
+          />
+        </el-form-item>
+        <el-form-item label="管理员等级" :label-width="formLabelWidth">
+          <el-select v-model="adminLevel" placeholder="请选择">
+            <el-option
+              v-for="item in selectLevel"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value">
+            </el-option>
+          </el-select>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -58,21 +84,62 @@ import { Message, MessageBox } from 'element-ui'
 
 export default {
   data() {
-    return {
-      themeData: [
-        {
-          id: 1,
-          name: 'wq',
-          create_time: '2020-08-10',
+    var validateName = (rule, value, callback) => {
+      if (value === '') {
+        return callback(new Error('请输入管理员名称'));
+      }
+    };
+    var validatePass = (rule, value, callback) => {
+      if (value === '') {
+        callback(new Error('请输入密码'));
+      } else {
+        if (this.form.rePassword !== '') {
+          this.$refs.form.validateField('rePassword');
         }
-      ],
+        callback();
+      }
+    };
+    var validateRePass = (rule, value, callback) => {
+      if (value === '') {
+        callback(new Error('请再次输入密码'));
+      } else if (this.form.rePassword !== this.form.password) {
+        callback(new Error('两次输入密码不一致!'));
+      } else {
+        callback();
+      }
+      
+    };
+    return {
+      themeData: [],
       switchDialog: true,
       editDialogVisible: false,
       form: {
         id: '',
         name: '',
+        password: '',
+        rePassword: ''
       },
-      formLabelWidth: '120px'
+      formLabelWidth: '120px',
+      adminLevel: 0,
+      selectLevel: [
+        {
+          label: 0,
+          value: 0
+        },
+        {
+          label: 1,
+          value: 1
+        },
+        {
+          label: 2,
+          value: 2
+        },
+      ],
+      rules: {
+        password: [{ validator: validatePass, trigger: 'blur' }],
+        rePassword: [{ validator: validateRePass, trigger: 'blur' }],
+        name: [{ validator: validateName, trigger: 'blur' }],
+      }
     }
   },
   methods: {
@@ -86,20 +153,24 @@ export default {
     },
     // 提交编辑
     submitEdit() {
-      if (this.form.name === '' || this.form.description === '') {
-        alert('主题名称或者描述不能为空')
-        return
-      }
+
       if (this.switchDialog) { // 提交添加主题
-        // console.log(this.form);
-        // api.addTheme(this.form.name, this.form.description).then(res => {
-        //   // console.log(res);
-        //   if (res.errorCode === 0) {
-        //     this.$router.go(0)
-        //   } else {
-        //     Message.error('添加主题失败')
-        //   }
-        // })
+        if (this.form.name === '' || this.form.password === '' || this.form.rePassword === '') {
+          Message.warning('名称和密码不能为空')
+          return
+        } else if (this.form.password !== this.form.rePassword) {
+          Message.warning('密码不一致')
+          return
+        }
+        console.log(this.form);
+        api.addAdmin(this.form.name, this.form.password, this.adminLevel).then(res => {
+          console.log(res);
+          if (res.errorCode === 0) {
+            this.$router.go(0)
+          } else {
+            Message.error('添加管理员失败')
+          }
+        })
       } else { // 提交编辑主题
         // api.updateTheme(this.form.id, this.form.name, this.form.description).then(res => {
         //   // console.log(res);
@@ -119,13 +190,14 @@ export default {
         cancelButtonText: '取消',
         type: 'warning'
       }).then(async () => {
-        // const res = await api.delTheme(id)
-        // if (res.errorCode === 0) {
-        //   // Message.success('成功删除');
-        //   this.$router.go(0)
-        // } else {
-        //   Message.error('删除失败')
-        // }
+        const res = await api.delAdmin(id)
+        // console.log(res);
+        if (res.errorCode === 0) {
+          // Message.success('成功删除');
+          this.$router.go(0)
+        } else {
+          Message.error('删除失败')
+        }
       }).catch(() => {
         Message.info('已取消删除');       
       });
@@ -134,6 +206,7 @@ export default {
     showAddDialog() {
       this.switchDialog = true
       this.clearForm()
+      this.adminLevel = 0
       this.editDialogVisible = true
     },
     // 清空表单
@@ -144,10 +217,10 @@ export default {
     }
   },
   created() {
-    // api.getTheme().then(res => {
-    //   // console.log(res);
-    //   this.themeData = res.data
-    // })
+    api.getAdmin().then(res => {
+      // console.log(res);
+      this.themeData = res
+    })
   }
 }
 </script>

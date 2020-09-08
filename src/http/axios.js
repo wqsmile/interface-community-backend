@@ -1,4 +1,5 @@
 import axios from 'axios'
+import cookie from '@/utils/cookie.js'
 
 axios.defaults.baseURL = process.env.NODE_ENV === 'production' ? 'http://breath.host' : '/api'
 
@@ -20,6 +21,11 @@ axios.interceptors.response.use(res => {
 
 axios.interceptors.request.use(req => {
   // console.log(req);
+  const administrator = cookie.get('administrator')
+  req.headers = {
+    ...req.headers,
+    administrator
+  }
 
   return req
 }, err => {

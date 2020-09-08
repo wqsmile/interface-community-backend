@@ -17,7 +17,10 @@ import {
   Dialog,
   Form,
   FormItem,
-  Input
+  Input,
+  Select,
+  Option,
+  Radio
 } from 'element-ui'
 
 Vue.use(Container)
@@ -38,3 +41,6 @@ Vue.use(Dialog)
 Vue.use(Form)
 Vue.use(FormItem)
 Vue.use(Input)
+Vue.use(Select)
+Vue.use(Option)
+Vue.use(Radio)

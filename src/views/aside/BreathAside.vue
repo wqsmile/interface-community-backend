@@ -1,9 +1,11 @@
 <template>
   <div class="breath-aside">
-    <el-radio-group v-model="isCollapse" style="margin-bottom: 20px;">
-      <el-radio-button :label="false">展开</el-radio-button>
-      <el-radio-button :label="true">收起</el-radio-button>
-    </el-radio-group>
+    <!-- <el-radio-group v-model="isCollapse" style="margin-bottom: 20px;">
+      <el-radio :label="false" border>展开</el-radio>
+      <br :class="{'isBr': !isCollapse}"> 
+      <el-radio border :label="true">收起</el-radio>
+    </el-radio-group> -->
+    <el-button class="aside-btn iconfont" :class="{'icon-shouqi' : isCollapse, 'icon-zhankai': !isCollapse}" size="medium"  @click="isCollapse = !isCollapse"></el-button>
     <el-menu
       default-active="1-4-1"
       class="el-menu-vertical-demo"
@@ -26,7 +28,7 @@
       <el-submenu index="manageArticleTheme">
         <template slot="title">
           <i class="iconfont icon-wenzhangguanli"></i>
-          <span slot="title">文章管理</span>
+          <span slot="title">文章管理 </span>
         </template>
         <el-menu-item-group>
           <el-menu-item index="manageArticleTheme">文章主题管理</el-menu-item>
@@ -47,7 +49,8 @@ import '@/assets/css/font.css'
 export default {
   data() {
     return {
-      isCollapse: true
+      isCollapse: false,
+      isCollapseContent: ['展开', '收起']
     };
   },
   methods: {
@@ -75,5 +78,11 @@ export default {
   .iconfont {
     margin-right: 5px;
   }
+
+  .aside-btn {
+    width: 65px;
+    text-align: center;
+  }
+
 }
 </style>

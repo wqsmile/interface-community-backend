@@ -2,9 +2,9 @@
   <div class="manage-article">
     <el-table :data="themeData" border style="width: 100%">
       <el-table-column prop="id" label="ID" min-width="50px"></el-table-column>
-      <el-table-column prop="name" label="文章名称"></el-table-column>
-      <el-table-column prop="author" label="作者"></el-table-column>
-      <el-table-column prop="isTop" label="置顶" :formatter="isTopFormat"></el-table-column>
+      <el-table-column prop="title" label="文章名称"></el-table-column>
+      <el-table-column prop="username" label="作者"></el-table-column>
+      <el-table-column prop="status" label="置顶" :formatter="isTopFormat"></el-table-column>
       <el-table-column prop="status" label="状态" :formatter="statusFormat"></el-table-column>
       <el-table-column prop="create_time" label="发布时间"></el-table-column>
       <el-table-column prop="edit" label="操作">
@@ -38,11 +38,14 @@
           ></el-input>
         </el-form-item>
         <el-form-item label="文章状态" :label-width="formLabelWidth">
-          <el-input
-            v-model="form.status"
-            autocomplete="off"
-            aria-placeholder="违规文章状态为-1, 置顶文章状态为1"
-          >{{ form.status }}</el-input>
+          <el-select v-model="form.status">
+            <el-option
+              v-for="item in selectStatus"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value">
+            </el-option>
+          </el-select>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -84,7 +87,21 @@ export default {
         id: '',
         status: '',
       },
-      formLabelWidth: '120px'
+      formLabelWidth: '120px',
+      selectStatus: [
+        {
+          label: '正常',
+          value: 0
+        },
+        {
+          label: '置顶',
+          value: 1
+        },
+        {
+          label: '违规',
+          value: -1
+        },
+      ]
     }
   },
   methods: {
@@ -98,30 +115,18 @@ export default {
     },
     // 提交编辑
     submitEdit() {
-      if (this.form.name === '' || this.form.description === '') {
-        alert('主题名称或者描述不能为空')
+      if (this.form.status === '') {
+        alert('文章状态不能为空')
         return
       }
-      if (this.switchDialog) { // 提交添加主题
-        // console.log(this.form);
-        // api.addTheme(this.form.name, this.form.description).then(res => {
-        //   // console.log(res);
-        //   if (res.errorCode === 0) {
-        //     this.$router.go(0)
-        //   } else {
-        //     Message.error('添加主题失败')
-        //   }
-        // })
-      } else { // 提交编辑主题
-        // api.updateTheme(this.form.id, this.form.name, this.form.description).then(res => {
-        //   // console.log(res);
-        //   if (res.errorCode === 0) {
-        //     this.$router.go(0)
-        //   } else {
-        //     Message.error('修改主题失败')
-        //   }
-        // })
-      }
+      api.modifyArt(this.form.id, this.form.status).then(res => {
+        // console.log(res);
+        if (res.errorCode === 0) {
+          this.$router.go(0)
+        } else {
+          Message.error('修改文章状态失败')
+        }
+      })
       this.editDialogVisible = false
     },
     // 删除主题
@@ -131,13 +136,13 @@ export default {
         cancelButtonText: '取消',
         type: 'warning'
       }).then(async () => {
-        // const res = await api.delTheme(id)
-        // if (res.errorCode === 0) {
-        //   // Message.success('成功删除');
-        //   this.$router.go(0)
-        // } else {
-        //   Message.error('删除失败')
-        // }
+        const res = await api.delArt(id)
+        if (res.errorCode === 0) {
+          // Message.success('成功删除');
+          this.$router.go(0)
+        } else {
+          Message.error('删除失败')
+        }
       }).catch(() => {
         Message.info('已取消删除');       
       });
@@ -156,7 +161,7 @@ export default {
     },
     isTopFormat(row, column, cellValue) {
       // console.log(row, column, cellValue);
-      return row.isTop === 1 ? '是' : '否'
+      return row.status === 1 ? '是' : '否'
     },
     statusFormat(row, column, cellValue) {
       switch (row.status) {
@@ -170,10 +175,10 @@ export default {
     }
   },
   created() {
-    // api.getTheme().then(res => {
-    //   // console.log(res);
-    //   this.themeData = res.data
-    // })
+    api.getArt().then(res => {
+      console.log(res);
+      this.themeData = res.data
+    })
   }
 }
 </script>
